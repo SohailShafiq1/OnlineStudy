@@ -87,6 +87,7 @@ const Header = () => {
                   onMouseLeave={() => setIsExamsOpen(false)}
                   className="absolute top-full left-0 mt-2 w-40 bg-white shadow-lg rounded-lg py-2"
                 >
+                  <Link to="/entrance-exams" className="block px-4 py-2 hover:bg-gray-100">All Exams</Link>
                   <Link to="/entrance-exams/mdcat" className="block px-4 py-2 hover:bg-gray-100">MDCAT</Link>
                   <Link to="/entrance-exams/nums" className="block px-4 py-2 hover:bg-gray-100">NUMS</Link>
                   <Link to="/entrance-exams/nust" className="block px-4 py-2 hover:bg-gray-100">NUST</Link>
@@ -103,6 +104,10 @@ const Header = () => {
 
             <Link to="/contact" className="text-gray-700 hover:text-primary font-medium transition">
               Contact
+            </Link>
+
+            <Link to="/admin" className="text-gray-700 hover:text-primary font-medium transition">
+              Admin
             </Link>
           </nav>
 

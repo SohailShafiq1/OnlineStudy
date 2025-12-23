@@ -19,6 +19,10 @@ import ChapterPage from './pages/ChapterPage';
 // Entrance Exam Pages
 import MDCATPage from './pages/MDCATPage';
 import NUMSPage from './pages/NUMSPage';
+import EntranceExams from './pages/EntranceExams';
+
+// Admin Page
+import Admin from './pages/Admin';
 
 /**
  * Main App Component
@@ -26,7 +30,7 @@ import NUMSPage from './pages/NUMSPage';
  */
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="flex flex-col min-h-screen">
         <Header />
         
@@ -50,8 +54,12 @@ function App() {
             <Route path="/classes/:classId/:subjectId/:chapterId" element={<ChapterPage />} />
 
             {/* Entrance Exam Pages */}
+            <Route path="/entrance-exams" element={<EntranceExams />} />
             <Route path="/entrance-exams/mdcat" element={<MDCATPage />} />
             <Route path="/entrance-exams/nums" element={<NUMSPage />} />
+            
+            {/* Admin Panel */}
+            <Route path="/admin" element={<Admin />} />
             
             {/* Entrance Exam Subject Pages (can be expanded) */}
             <Route path="/entrance-exams/:examId/:subjectId" element={<SubjectPage />} />

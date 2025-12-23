@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { db } from '../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 /**
  * SubjectPage Component - Shows chapters for a specific subject
@@ -7,30 +9,28 @@ import { useParams, Link } from 'react-router-dom';
  */
 const SubjectPage = () => {
   const { classId, subjectId } = useParams();
+  const [notes, setNotes] = useState([]);
+  const [subjectName, setSubjectName] = useState('Subject');
 
-  // Subject information
-  const subjectInfo = {
-    english: { name: 'English', icon: '📖' },
-    biology: { name: 'Biology', icon: '🧬' },
-    physics: { name: 'Physics', icon: '⚛️' },
-    chemistry: { name: 'Chemistry', icon: '🧪' },
-    mathematics: { name: 'Mathematics', icon: '📐' },
-    urdu: { name: 'Urdu', icon: '📚' },
-    'pakistan-studies': { name: 'Pakistan Studies', icon: '🇵🇰' },
-    islamiyat: { name: 'Islamiyat', icon: '🕌' },
-  };
+  useEffect(() => {
+    const fetchNotes = async () => {
+      const q = query(collection(db, 'notes'), where('subjectId', '==', subjectId));
+      const querySnapshot = await getDocs(q);
+      const nts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setNotes(nts);
+    };
+    fetchNotes();
 
-  // Sample chapters (in real app, this would come from data/API)
-  const chapters = [
-    { number: 1, title: 'Introduction to Subject', hasNotes: true, hasMCQs: true },
-    { number: 2, title: 'Fundamental Concepts', hasNotes: true, hasMCQs: true },
-    { number: 3, title: 'Advanced Topics', hasNotes: true, hasMCQs: true },
-    { number: 4, title: 'Practical Applications', hasNotes: true, hasMCQs: true },
-    { number: 5, title: 'Problem Solving', hasNotes: true, hasMCQs: true },
-    { number: 6, title: 'Review and Practice', hasNotes: true, hasMCQs: true },
-  ];
-
-  const subject = subjectInfo[subjectId] || { name: 'Subject', icon: '📚' };
+    // Fetch subject name
+    const fetchSubject = async () => {
+      const q = query(collection(db, 'subjects'), where('__name__', '==', subjectId));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        setSubjectName(querySnapshot.docs[0].data().name);
+      }
+    };
+    fetchSubject();
+  }, [subjectId]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -48,9 +48,9 @@ const SubjectPage = () => {
 
         {/* Page Header */}
         <div className="text-center mb-12">
-          <div className="text-6xl mb-4">{subject.icon}</div>
+          <div className="text-6xl mb-4">📖</div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {classId.toUpperCase()} Class {subject.name}
+            {classId.toUpperCase()} Class {subjectName}
           </h1>
           <p className="text-xl text-gray-600">
             Complete chapter-wise notes, MCQs, and study material
@@ -58,55 +58,109 @@ const SubjectPage = () => {
         </div>
 
         {/* Chapters List */}
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            📑 Chapters
-          </h2>
-
-          <div className="space-y-4">
-            {chapters.map((chapter) => (
-              <div
-                key={chapter.number}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition border-l-4 border-primary"
-              >
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Chapter {chapter.number}: {chapter.title}
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {chapter.hasNotes && (
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                          📝 Notes Available
-                        </span>
-                      )}
-                      {chapter.hasMCQs && (
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-                          ✍️ MCQs Available
-                        </span>
-                      )}
+        {notes.filter(n => n.type === 'chapter').length > 0 && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              📑 Chapters
+            </h2>
+            <div className="space-y-4">
+              {notes.filter(n => n.type === 'chapter').map((note) => (
+                <div
+                  key={note.id}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition border-l-4 border-primary"
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {note.title}
+                      </h3>
+                    </div>
+                    <div className="flex gap-3">
+                      <a
+                        href={note.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+                      >
+                        View PDF
+                      </a>
                     </div>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-                  <div className="flex gap-3">
-                    <Link
-                      to={`/classes/${classId}/${subjectId}/chapter-${chapter.number}`}
-                      className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition font-semibold"
-                    >
-                      View Notes
-                    </Link>
-                    <Link
-                      to={`/classes/${classId}/${subjectId}/chapter-${chapter.number}/mcqs`}
-                      className="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-green-700 transition font-semibold"
-                    >
-                      MCQs
-                    </Link>
+        {/* Past Papers */}
+        {notes.filter(n => n.type === 'pastpaper').length > 0 && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              📝 Past Papers
+            </h2>
+            <div className="space-y-4">
+              {notes.filter(n => n.type === 'pastpaper').map((note) => (
+                <div
+                  key={note.id}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition border-l-4 border-green-500"
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {note.title}
+                      </h3>
+                    </div>
+                    <div className="flex gap-3">
+                      <a
+                        href={note.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+                      >
+                        View PDF
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Other Notes */}
+        {notes.filter(n => n.type === 'other').length > 0 && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              📚 Other Materials
+            </h2>
+            <div className="space-y-4">
+              {notes.filter(n => n.type === 'other').map((note) => (
+                <div
+                  key={note.id}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition border-l-4 border-purple-500"
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {note.title}
+                      </h3>
+                    </div>
+                    <div className="flex gap-3">
+                      <a
+                        href={note.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
+                      >
+                        View PDF
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Additional Resources */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">

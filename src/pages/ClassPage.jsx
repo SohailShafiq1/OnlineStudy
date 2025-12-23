@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { db } from '../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import SubjectCard from '../components/SubjectCard';
 
 /**
@@ -8,6 +10,17 @@ import SubjectCard from '../components/SubjectCard';
  */
 const ClassPage = () => {
   const { classId } = useParams();
+  const [subjects, setSubjects] = useState([]);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      const q = query(collection(db, 'subjects'), where('classId', '==', classId));
+      const querySnapshot = await getDocs(q);
+      const subs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSubjects(subs);
+    };
+    fetchSubjects();
+  }, [classId]);
 
   // Class information
   const classInfo = {
@@ -16,18 +29,6 @@ const ClassPage = () => {
     '11th': { title: '11th Class', fullName: '1st Year - FSc Part 1' },
     '12th': { title: '12th Class', fullName: '2nd Year - FSc Part 2' },
   };
-
-  // Subjects for each class
-  const subjects = [
-    { name: 'English', icon: '📖', link: `/classes/${classId}/english`, description: 'Grammar, essays, and literature' },
-    { name: 'Biology', icon: '🧬', link: `/classes/${classId}/biology`, description: 'Living organisms and life processes' },
-    { name: 'Physics', icon: '⚛️', link: `/classes/${classId}/physics`, description: 'Matter, energy, and forces' },
-    { name: 'Chemistry', icon: '🧪', link: `/classes/${classId}/chemistry`, description: 'Elements, compounds, and reactions' },
-    { name: 'Mathematics', icon: '📐', link: `/classes/${classId}/mathematics`, description: 'Algebra, geometry, and calculus' },
-    { name: 'Urdu', icon: '📚', link: `/classes/${classId}/urdu`, description: 'Urdu literature and grammar' },
-    { name: 'Pakistan Studies', icon: '🇵🇰', link: `/classes/${classId}/pakistan-studies`, description: 'History and geography of Pakistan' },
-    { name: 'Islamiyat', icon: '🕌', link: `/classes/${classId}/islamiyat`, description: 'Islamic studies' },
-  ];
 
   const currentClass = classInfo[classId] || { title: 'Class', fullName: 'Class' };
 
@@ -46,13 +47,13 @@ const ClassPage = () => {
 
         {/* Subjects Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
-          {subjects.map((subject, index) => (
+          {subjects.map((subject) => (
             <SubjectCard
-              key={index}
+              key={subject.id}
               subject={subject.name}
-              icon={subject.icon}
-              link={subject.link}
-              description={subject.description}
+              icon="📖"
+              link={`/classes/${classId}/${subject.id}`}
+              description="Study materials and notes"
             />
           ))}
         </div>
