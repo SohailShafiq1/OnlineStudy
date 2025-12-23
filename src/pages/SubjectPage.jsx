@@ -9,10 +9,19 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
  */
 const SubjectPage = () => {
   const { classId, subjectId } = useParams();
+  const [chapters, setChapters] = useState([]);
   const [notes, setNotes] = useState([]);
   const [subjectName, setSubjectName] = useState('Subject');
 
   useEffect(() => {
+    const fetchChapters = async () => {
+      const q = query(collection(db, 'chapters'), where('subjectId', '==', subjectId));
+      const querySnapshot = await getDocs(q);
+      const chs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setChapters(chs);
+    };
+    fetchChapters();
+
     const fetchNotes = async () => {
       const q = query(collection(db, 'notes'), where('subjectId', '==', subjectId));
       const querySnapshot = await getDocs(q);
@@ -43,7 +52,7 @@ const SubjectPage = () => {
             {classId.toUpperCase()} Class
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-gray-900 font-semibold">{subject.name}</span>
+          <span className="text-gray-900 font-semibold">{subjectName}</span>
         </div>
 
         {/* Page Header */}
@@ -58,109 +67,45 @@ const SubjectPage = () => {
         </div>
 
         {/* Chapters List */}
-        {notes.filter(n => n.type === 'chapter').length > 0 && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              📑 Chapters
-            </h2>
-            <div className="space-y-4">
-              {notes.filter(n => n.type === 'chapter').map((note) => (
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            📑 Chapters
+          </h2>
+          <div className="space-y-4">
+            {chapters.map((chapter) => {
+              const chapterNotes = notes.filter(n => n.chapterId === chapter.id);
+              return (
                 <div
-                  key={note.id}
+                  key={chapter.id}
                   className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition border-l-4 border-primary"
                 >
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {note.title}
-                      </h3>
-                    </div>
-                    <div className="flex gap-3">
-                      <a
-                        href={note.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition font-semibold"
-                      >
-                        View PDF
-                      </a>
-                    </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      {chapter.name}
+                    </h3>
+                    {chapterNotes.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        {chapterNotes.map((note) => (
+                          <div key={note.id} className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                            <span className="font-medium">{note.title}</span>
+                            <a
+                              href={note.pdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition font-semibold text-sm"
+                            >
+                              View PDF
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
-
-        {/* Past Papers */}
-        {notes.filter(n => n.type === 'pastpaper').length > 0 && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              📝 Past Papers
-            </h2>
-            <div className="space-y-4">
-              {notes.filter(n => n.type === 'pastpaper').map((note) => (
-                <div
-                  key={note.id}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition border-l-4 border-green-500"
-                >
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {note.title}
-                      </h3>
-                    </div>
-                    <div className="flex gap-3">
-                      <a
-                        href={note.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 transition font-semibold"
-                      >
-                        View PDF
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Other Notes */}
-        {notes.filter(n => n.type === 'other').length > 0 && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              📚 Other Materials
-            </h2>
-            <div className="space-y-4">
-              {notes.filter(n => n.type === 'other').map((note) => (
-                <div
-                  key={note.id}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition border-l-4 border-purple-500"
-                >
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {note.title}
-                      </h3>
-                    </div>
-                    <div className="flex gap-3">
-                      <a
-                        href={note.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
-                      >
-                        View PDF
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Additional Resources */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">

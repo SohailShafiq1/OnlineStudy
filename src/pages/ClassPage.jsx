@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import SubjectCard from '../components/SubjectCard';
 
 /**
  * ClassPage Component - Template for individual class pages (9th, 10th, 11th, 12th)
