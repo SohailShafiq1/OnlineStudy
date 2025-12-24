@@ -71,14 +71,25 @@ router.post('/', upload.single('pdf'), async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
-    if (note) {
-      // Delete the file from filesystem
-      fs.unlinkSync(note.path);
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found' });
     }
+
+    // Delete the file from filesystem if it exists
+    try {
+      if (note.path && fs.existsSync(note.path)) {
+        fs.unlinkSync(note.path);
+      }
+    } catch (fsErr) {
+      // Log filesystem error but continue to remove DB record
+      console.error('Failed to delete note file:', fsErr);
+    }
+
     await Note.findByIdAndDelete(req.params.id);
     res.json({ message: 'Note deleted' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error deleting note:', error);
+    res.status(500).json({ message: 'Failed to delete note' });
   }
 });
 

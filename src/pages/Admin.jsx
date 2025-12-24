@@ -174,27 +174,69 @@ const Admin = () => {
   };
 
   const handleDeleteClass = async (id) => {
-    if (window.confirm('Delete this class?')) {
+    if (!window.confirm('Delete this class?')) return;
+    try {
       await deleteClass(id);
-      fetchAllData(); // Refresh everything to clear orphaned children
+      setClasses(prev => prev.filter(c => c._id !== id));
+      // also remove related subjects/chapters/notes locally
+      setSubjects(prev => prev.filter(s => (s.classId?._id || s.classId) !== id));
+      setChapters(prev => prev.filter(ch => {
+        const sid = typeof ch.subjectId === 'object' ? ch.subjectId._id : ch.subjectId;
+        return subjects.findIndex(s => (s._id === sid && (s.classId?._id || s.classId) === id)) === -1;
+      }));
+      fetchAllData();
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      alert('Failed to delete class: ' + (error.response?.data?.message || error.message));
     }
   };
 
   const handleDeleteSubject = async (id) => {
-    await deleteSubject(id);
-    fetchSubjects();
-    fetchChapters();
+    if (!window.confirm('Delete this subject?')) return;
+    try {
+      await deleteSubject(id);
+      setSubjects(prev => prev.filter(s => s._id !== id));
+      setChapters(prev => prev.filter(ch => (ch.subjectId?._id || ch.subjectId) !== id));
+      fetchChapters();
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+      alert('Failed to delete subject: ' + (error.response?.data?.message || error.message));
+    }
   };
 
   const handleDeleteChapter = async (id) => {
-    await deleteChapter(id);
-    fetchChapters();
-    fetchNotes();
+    if (!window.confirm('Delete this chapter?')) return;
+    try {
+      await deleteChapter(id);
+      setChapters(prev => prev.filter(ch => ch._id !== id));
+      setNotes(prev => prev.filter(n => n.chapterId !== id));
+      fetchNotes();
+    } catch (error) {
+      console.error('Error deleting chapter:', error);
+      alert('Failed to delete chapter: ' + (error.response?.data?.message || error.message));
+    }
   };
 
   const handleDeleteNote = async (id) => {
-    await deleteNote(id);
-    fetchNotes();
+    if (!window.confirm('Delete this note?')) return;
+    try {
+      await deleteNote(id);
+      setNotes(prev => prev.filter(n => n._id !== id));
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert('Failed to delete note: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleDeleteEntranceExam = async (id) => {
+    if (!window.confirm('Delete this exam?')) return;
+    try {
+      await deleteEntranceExam(id);
+      setEntranceExams(prev => prev.filter(e => e._id !== id));
+    } catch (error) {
+      console.error('Error deleting entrance exam:', error);
+      alert('Failed to delete exam: ' + (error.response?.data?.message || error.message));
+    }
   };
 
   return (
