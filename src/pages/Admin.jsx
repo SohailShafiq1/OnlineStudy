@@ -119,29 +119,43 @@ const Admin = () => {
 
 
   const addNote = async () => {
-    if (selectedChapter && pdfFile) {
-      try {
-        // Find the chapter to get subjectId
-        const chapter = chapters.find(c => c.id === selectedChapter);
-        if (!chapter) return;
-
-        const formData = new FormData();
-        formData.append('pdf', pdfFile);
-        formData.append('title', noteTitle || pdfFile.name);
-        formData.append('chapterId', selectedChapter);
-        formData.append('subjectId', chapter.subjectId);
-
-        await uploadNote(formData);
-        setNoteTitle('');
-        setPdfFile(null);
-        fetchNotes();
-      } catch (error) {
-        console.error('Error uploading note:', error);
+    if (!selectedChapter) {
+      alert('Please select a chapter first');
+      return;
+    }
+    if (!pdfFile) {
+      alert('Please select a PDF file to upload');
+      return;
+    }
+    try {
+      // Find the chapter to get subjectId
+      const chapter = chapters.find(c => c._id === selectedChapter);
+      if (!chapter) {
+        alert('Selected chapter not found. Please try again.');
+        return;
       }
+
+      const formData = new FormData();
+      formData.append('pdf', pdfFile);
+      formData.append('title', noteTitle || pdfFile.name);
+      formData.append('chapterId', selectedChapter);
+      formData.append('subjectId', chapter.subjectId._id);
+
+      const response = await uploadNote(formData);
+      alert('Note uploaded successfully!');
+      setNoteTitle('');
+      setPdfFile(null);
+      // Clear the file input
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) fileInput.value = '';
+      fetchNotes();
+    } catch (error) {
+      console.error('Error uploading note:', error);
+      alert('Error uploading note: ' + (error.response?.data?.message || error.message));
     }
   };
 
-  const deleteClass = async (id) => {
+  const handleDeleteClass = async (id) => {
     try {
       await deleteClass(id);
       fetchClasses();
@@ -150,7 +164,7 @@ const Admin = () => {
     }
   };
 
-  const deleteSubject = async (id) => {
+  const handleDeleteSubject = async (id) => {
     try {
       await deleteSubject(id);
       fetchSubjects();
@@ -159,7 +173,7 @@ const Admin = () => {
     }
   };
 
-  const deleteChapter = async (id) => {
+  const handleDeleteChapter = async (id) => {
     try {
       await deleteChapter(id);
       fetchChapters();
@@ -168,7 +182,7 @@ const Admin = () => {
     }
   };
 
-  const deleteNote = async (id) => {
+  const handleDeleteNote = async (id) => {
     try {
       await deleteNote(id);
       fetchNotes();
@@ -218,7 +232,7 @@ const Admin = () => {
           {classes.map(cls => (
             <li key={cls._id} className="mb-2 flex justify-between items-center">
               <span>{cls.name}</span>
-              <button onClick={() => deleteClass(cls._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+              <button onClick={() => handleDeleteClass(cls._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
             </li>
           ))}
         </ul>
@@ -278,7 +292,7 @@ const Admin = () => {
               {subjects.filter(sub => sub.classId._id === cls._id).map(sub => (
                 <li key={sub._id} className="ml-4 mb-2 flex justify-between items-center">
                   <span>{sub.name}</span>
-                  <button onClick={() => deleteSubject(sub._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+                  <button onClick={() => handleDeleteSubject(sub._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
                 </li>
               ))}
             </ul>
@@ -296,7 +310,7 @@ const Admin = () => {
               {chapters.filter(ch => ch.subjectId._id === sub._id).map(ch => (
                 <li key={ch._id} className="ml-4 mb-2 flex justify-between items-center">
                   <span>{ch.name}</span>
-                  <button onClick={() => deleteChapter(ch._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+                  <button onClick={() => handleDeleteChapter(ch._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
                 </li>
               ))}
             </ul>
@@ -327,9 +341,14 @@ const Admin = () => {
         <input
           type="file"
           accept="application/pdf"
-          onChange={(e) => setPdfFile(e.target.files[0])}
+          onChange={(e) => {
+            console.log('File input changed:', e.target.files);
+            setPdfFile(e.target.files[0]);
+            console.log('pdfFile set to:', e.target.files[0]);
+          }}
           className="border p-2 mr-2"
         />
+        {pdfFile && <span className="text-sm text-gray-600 mr-2">Selected: {pdfFile.name}</span>}
         <button onClick={addNote} className="bg-blue-500 text-white px-4 py-2">Add Note</button>
       </div>
 
@@ -345,7 +364,7 @@ const Admin = () => {
                 {notes.filter(n => n.chapterId === ch._id.toString()).map(note => (
                   <div key={note._id} className="mb-2 flex justify-between items-center">
                     <span>{note.title}</span>
-                    <button onClick={() => deleteNote(note._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+                    <button onClick={() => handleDeleteNote(note._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
                   </div>
                 ))}
               </div>
