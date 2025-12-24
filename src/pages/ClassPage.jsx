@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { db } from '../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getSubjects } from '../api';
 
 /**
  * ClassPage Component - Template for individual class pages (9th, 10th, 11th, 12th)
@@ -13,10 +12,13 @@ const ClassPage = () => {
 
   useEffect(() => {
     const fetchSubjects = async () => {
-      const q = query(collection(db, 'subjects'), where('classId', '==', classId));
-      const querySnapshot = await getDocs(q);
-      const subs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setSubjects(subs);
+      try {
+        const response = await getSubjects();
+        const filteredSubjects = response.data.filter(subject => subject.classId._id === classId || subject.classId === classId);
+        setSubjects(filteredSubjects);
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
+      }
     };
     fetchSubjects();
   }, [classId]);

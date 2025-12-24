@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { getEntranceExams } from '../api';
 
 const EntranceExams = () => {
   const [exams, setExams] = useState([]);
 
   useEffect(() => {
     const fetchExams = async () => {
-      const querySnapshot = await getDocs(collection(db, 'entranceExams'));
-      setExams(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      try {
+        const response = await getEntranceExams();
+        setExams(response.data);
+      } catch (error) {
+        console.error('Error fetching entrance exams:', error);
+      }
     };
     fetchExams();
   }, []);

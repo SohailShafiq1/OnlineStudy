@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { db, storage } from '../firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import {
+  getClasses, createClass, deleteClass,
+  getSubjects, createSubject, deleteSubject,
+  getChapters, createChapter, deleteChapter,
+  getNotes, uploadNote, deleteNote,
+  getEntranceExams, uploadEntranceExam, deleteEntranceExam
+} from '../api';
 
 const Admin = () => {
   const [classes, setClasses] = useState([]);
@@ -32,119 +36,161 @@ const Admin = () => {
   }, []);
 
   const fetchClasses = async () => {
-    const querySnapshot = await getDocs(collection(db, 'classes'));
-    setClasses(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    try {
+      const response = await getClasses();
+      setClasses(response.data);
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+    }
   };
 
   const fetchSubjects = async () => {
-    const querySnapshot = await getDocs(collection(db, 'subjects'));
-    setSubjects(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    try {
+      const response = await getSubjects();
+      setSubjects(response.data);
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+    }
   };
 
   const fetchNotes = async () => {
-    const querySnapshot = await getDocs(collection(db, 'notes'));
-    setNotes(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    try {
+      const response = await getNotes();
+      setNotes(response.data);
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    }
   };
 
   const fetchChapters = async () => {
-    const querySnapshot = await getDocs(collection(db, 'chapters'));
-    setChapters(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    try {
+      const response = await getChapters();
+      setChapters(response.data);
+    } catch (error) {
+      console.error('Error fetching chapters:', error);
+    }
   };
 
   const fetchEntranceExams = async () => {
-    const querySnapshot = await getDocs(collection(db, 'entranceExams'));
-    setEntranceExams(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    try {
+      const response = await getEntranceExams();
+      setEntranceExams(response.data);
+    } catch (error) {
+      console.error('Error fetching entrance exams:', error);
+    }
   };
 
   const addClass = async () => {
     if (newClass) {
-      await addDoc(collection(db, 'classes'), { name: newClass });
-      setNewClass('');
-      fetchClasses();
+      try {
+        await createClass({ name: newClass });
+        setNewClass('');
+        fetchClasses();
+      } catch (error) {
+        console.error('Error adding class:', error);
+      }
     }
   };
 
   const addSubject = async () => {
     if (newSubject && selectedClass) {
-      await addDoc(collection(db, 'subjects'), { name: newSubject, classId: selectedClass });
-      setNewSubject('');
-      fetchSubjects();
+      try {
+        await createSubject({ name: newSubject, classId: selectedClass });
+        setNewSubject('');
+        fetchSubjects();
+      } catch (error) {
+        console.error('Error adding subject:', error);
+      }
     }
   };
 
   const addChapter = async () => {
     if (newChapter && selectedSubjectForChapter) {
-      await addDoc(collection(db, 'chapters'), { name: newChapter, subjectId: selectedSubjectForChapter });
-      setNewChapter('');
-      fetchChapters();
+      try {
+        await createChapter({ name: newChapter, subjectId: selectedSubjectForChapter });
+        setNewChapter('');
+        fetchChapters();
+      } catch (error) {
+        console.error('Error adding chapter:', error);
+      }
     }
   };
 
-  const uploadPdf = async (file, classId = null, subjectId = null) => {
-    let folder = 'pdfs/';
-    if (classId && subjectId) {
-      folder = `classes/${classId}/subjects/${subjectId}/`;
-    } else if (classId) {
-      folder = `classes/${classId}/`;
-    }
-    const storageRef = ref(storage, `${folder}${file.name}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
-  };
+
 
   const addNote = async () => {
     if (selectedChapter && pdfFile) {
-      // Find the chapter to get subjectId and classId
-      const chapter = chapters.find(c => c.id === selectedChapter);
-      if (!chapter) return;
-      const subject = subjects.find(s => s.id === chapter.subjectId);
-      if (!subject) return;
+      try {
+        // Find the chapter to get subjectId
+        const chapter = chapters.find(c => c.id === selectedChapter);
+        if (!chapter) return;
 
-      const pdfUrl = await uploadPdf(pdfFile, subject.classId, chapter.subjectId);
-      await addDoc(collection(db, 'notes'), {
-        chapterId: selectedChapter,
-        subjectId: chapter.subjectId,
-        title: noteTitle || pdfFile.name,
-        pdfUrl,
-        filename: pdfFile.name,
-        path: `classes/${subject.classId}/subjects/${chapter.subjectId}/${pdfFile.name}`
-      });
-      setNoteTitle('');
-      setPdfFile(null);
-      fetchNotes();
+        const formData = new FormData();
+        formData.append('pdf', pdfFile);
+        formData.append('title', noteTitle || pdfFile.name);
+        formData.append('chapterId', selectedChapter);
+        formData.append('subjectId', chapter.subjectId);
+
+        await uploadNote(formData);
+        setNoteTitle('');
+        setPdfFile(null);
+        fetchNotes();
+      } catch (error) {
+        console.error('Error uploading note:', error);
+      }
     }
   };
 
   const deleteClass = async (id) => {
-    await deleteDoc(doc(db, 'classes', id));
-    fetchClasses();
+    try {
+      await deleteClass(id);
+      fetchClasses();
+    } catch (error) {
+      console.error('Error deleting class:', error);
+    }
   };
 
   const deleteSubject = async (id) => {
-    await deleteDoc(doc(db, 'subjects', id));
-    fetchSubjects();
+    try {
+      await deleteSubject(id);
+      fetchSubjects();
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+    }
   };
 
   const deleteChapter = async (id) => {
-    await deleteDoc(doc(db, 'chapters', id));
-    fetchChapters();
+    try {
+      await deleteChapter(id);
+      fetchChapters();
+    } catch (error) {
+      console.error('Error deleting chapter:', error);
+    }
   };
 
   const deleteNote = async (id) => {
-    await deleteDoc(doc(db, 'notes', id));
-    fetchNotes();
+    try {
+      await deleteNote(id);
+      fetchNotes();
+    } catch (error) {
+      console.error('Error deleting note:', error);
+    }
   };
 
   const addEntranceExam = async () => {
     if (newExamName && examPdfFile) {
-      const pdfUrl = await uploadPdf(examPdfFile);
-      await addDoc(collection(db, 'entranceExams'), {
-        name: newExamName,
-        pdfUrl
-      });
-      setNewExamName('');
-      setExamPdfFile(null);
-      fetchEntranceExams();
+      try {
+        const formData = new FormData();
+        formData.append('pdf', examPdfFile);
+        formData.append('name', newExamName);
+
+        await uploadEntranceExam(formData);
+        setNewExamName('');
+        setExamPdfFile(null);
+        fetchEntranceExams();
+      } catch (error) {
+        console.error('Error uploading entrance exam:', error);
+      }
     }
   };
 
@@ -170,9 +216,9 @@ const Admin = () => {
         <h2 className="text-2xl font-semibold mb-4">Classes</h2>
         <ul>
           {classes.map(cls => (
-            <li key={cls.id} className="mb-2 flex justify-between items-center">
+            <li key={cls._id} className="mb-2 flex justify-between items-center">
               <span>{cls.name}</span>
-              <button onClick={() => deleteClass(cls.id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+              <button onClick={() => deleteClass(cls._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
             </li>
           ))}
         </ul>
@@ -184,7 +230,7 @@ const Admin = () => {
         <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="border p-2 mr-2">
           <option value="">Select Class</option>
           {classes.map(cls => (
-            <option key={cls.id} value={cls.id}>{cls.name}</option>
+            <option key={cls._id} value={cls._id}>{cls.name}</option>
           ))}
         </select>
         <input
@@ -203,13 +249,13 @@ const Admin = () => {
         <select value={selectedClassForChapter} onChange={(e) => { setSelectedClassForChapter(e.target.value); setSelectedSubjectForChapter(''); }} className="border p-2 mr-2">
           <option value="">Select Class</option>
           {classes.map(cls => (
-            <option key={cls.id} value={cls.id}>{cls.name}</option>
+            <option key={cls._id} value={cls._id}>{cls.name}</option>
           ))}
         </select>
         <select value={selectedSubjectForChapter} onChange={(e) => setSelectedSubjectForChapter(e.target.value)} className="border p-2 mr-2" disabled={!selectedClassForChapter}>
           <option value="">Select Subject</option>
-          {subjects.filter(sub => sub.classId === selectedClassForChapter).map(sub => (
-            <option key={sub.id} value={sub.id}>{sub.name}</option>
+          {subjects.filter(sub => sub.classId._id === selectedClassForChapter).map(sub => (
+            <option key={sub._id} value={sub._id}>{sub.name}</option>
           ))}
         </select>
         <input
@@ -226,13 +272,13 @@ const Admin = () => {
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Subjects</h2>
         {classes.map(cls => (
-          <div key={cls.id} className="mb-4">
+          <div key={cls._id} className="mb-4">
             <h3 className="text-xl font-medium">{cls.name}</h3>
             <ul>
-              {subjects.filter(sub => sub.classId === cls.id).map(sub => (
-                <li key={sub.id} className="ml-4 mb-2 flex justify-between items-center">
+              {subjects.filter(sub => sub.classId._id === cls._id).map(sub => (
+                <li key={sub._id} className="ml-4 mb-2 flex justify-between items-center">
                   <span>{sub.name}</span>
-                  <button onClick={() => deleteSubject(sub.id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+                  <button onClick={() => deleteSubject(sub._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
                 </li>
               ))}
             </ul>
@@ -244,13 +290,13 @@ const Admin = () => {
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Chapters</h2>
         {subjects.map(sub => (
-          <div key={sub.id} className="mb-4">
+          <div key={sub._id} className="mb-4">
             <h3 className="text-xl font-medium">{sub.name}</h3>
             <ul>
-              {chapters.filter(ch => ch.subjectId === sub.id).map(ch => (
-                <li key={ch.id} className="ml-4 mb-2 flex justify-between items-center">
+              {chapters.filter(ch => ch.subjectId._id === sub._id).map(ch => (
+                <li key={ch._id} className="ml-4 mb-2 flex justify-between items-center">
                   <span>{ch.name}</span>
-                  <button onClick={() => deleteChapter(ch.id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+                  <button onClick={() => deleteChapter(ch._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
                 </li>
               ))}
             </ul>
@@ -262,13 +308,13 @@ const Admin = () => {
         <select value={selectedSubject} onChange={(e) => { setSelectedSubject(e.target.value); setSelectedChapter(''); }} className="border p-2 mr-2">
           <option value="">Select Subject</option>
           {subjects.map(sub => (
-            <option key={sub.id} value={sub.id}>{sub.name}</option>
+            <option key={sub._id} value={sub._id}>{sub.name}</option>
           ))}
         </select>
         <select value={selectedChapter} onChange={(e) => setSelectedChapter(e.target.value)} className="border p-2 mr-2" disabled={!selectedSubject}>
           <option value="">Select Chapter</option>
-          {chapters.filter(ch => ch.subjectId === selectedSubject).map(ch => (
-            <option key={ch.id} value={ch.id}>{ch.name}</option>
+          {chapters.filter(ch => ch.subjectId._id === selectedSubject).map(ch => (
+            <option key={ch._id} value={ch._id}>{ch.name}</option>
           ))}
         </select>
         <input
@@ -291,15 +337,15 @@ const Admin = () => {
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Notes</h2>
         {chapters.map(ch => {
-          const subject = subjects.find(s => s.id === ch.subjectId);
+          const subject = subjects.find(s => s._id === ch.subjectId._id);
           return (
-            <div key={ch.id} className="mb-4">
+            <div key={ch._id} className="mb-4">
               <h3 className="text-xl font-medium">{subject ? `${subject.name} - ${ch.name}` : ch.name}</h3>
               <div className="ml-4">
-                {notes.filter(n => n.chapterId === ch.id).map(note => (
-                  <div key={note.id} className="mb-2 flex justify-between items-center">
+                {notes.filter(n => n.chapterId === ch._id.toString()).map(note => (
+                  <div key={note._id} className="mb-2 flex justify-between items-center">
                     <span>{note.title}</span>
-                    <button onClick={() => deleteNote(note.id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+                    <button onClick={() => deleteNote(note._id)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
                   </div>
                 ))}
               </div>

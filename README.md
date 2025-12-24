@@ -41,13 +41,68 @@ Pakistan's Smart Education Platform - Complete study material for classes 9-12 a
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 18
+### Frontend
+- **React**: 18 with Vite
 - **Routing**: React Router v6
 - **Styling**: Tailwind CSS
-- **Build Tool**: Vite
+- **HTTP Client**: Axios
 - **Language**: JavaScript (ES6+)
 
-## 📦 Installation
+### Backend
+- **Runtime**: Node.js with Express.js
+- **Database**: MongoDB with Mongoose
+- **File Upload**: Multer
+- **CORS**: Enabled for cross-origin requests
+
+## 📦 Installation & Setup
+
+### Prerequisites
+- Node.js (v14 or higher)
+- MongoDB (local or MongoDB Atlas)
+- npm or yarn
+
+### Backend Setup
+
+1. **Install MongoDB** (skip if using MongoDB Atlas):
+   ```bash
+   # macOS with Homebrew
+   brew install mongodb-community
+   brew services start mongodb-community
+   ```
+
+2. **Navigate to backend directory**:
+   ```bash
+   cd backend
+   ```
+
+3. **Install backend dependencies**:
+   ```bash
+   npm install
+   ```
+
+4. **Start the backend server**:
+   ```bash
+   npm run dev
+   ```
+   Server runs on `http://localhost:5000`
+
+### Frontend Setup
+
+1. **Return to root directory**:
+   ```bash
+   cd ..
+   ```
+
+2. **Install frontend dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+   Frontend runs on `http://localhost:5173`
 
 1. Clone the repository:
 ```bash

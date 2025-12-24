@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { db } from '../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getChapters, getNotes } from '../api';
 
 /**
  * SubjectPage Component - Shows chapters for a specific subject
@@ -14,31 +13,31 @@ const SubjectPage = () => {
   const [subjectName, setSubjectName] = useState('Subject');
 
   useEffect(() => {
-    const fetchChapters = async () => {
-      const q = query(collection(db, 'chapters'), where('subjectId', '==', subjectId));
-      const querySnapshot = await getDocs(q);
-      const chs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setChapters(chs);
-    };
-    fetchChapters();
+    const fetchData = async () => {
+      try {
+        // Fetch chapters
+        const chaptersResponse = await getChapters();
+        const filteredChapters = chaptersResponse.data.filter(chapter =>
+          chapter.subjectId._id === subjectId || chapter.subjectId === subjectId
+        );
+        setChapters(filteredChapters);
 
-    const fetchNotes = async () => {
-      const q = query(collection(db, 'notes'), where('subjectId', '==', subjectId));
-      const querySnapshot = await getDocs(q);
-      const nts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setNotes(nts);
-    };
-    fetchNotes();
+        // Fetch notes
+        const notesResponse = await getNotes();
+        const filteredNotes = notesResponse.data.filter(note =>
+          note.subjectId._id === subjectId || note.subjectId === subjectId
+        );
+        setNotes(filteredNotes);
 
-    // Fetch subject name
-    const fetchSubject = async () => {
-      const q = query(collection(db, 'subjects'), where('__name__', '==', subjectId));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        setSubjectName(querySnapshot.docs[0].data().name);
+        // Set subject name from the first note or chapter
+        if (filteredChapters.length > 0) {
+          setSubjectName(filteredChapters[0].subjectId.name);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
       }
     };
-    fetchSubject();
+    fetchData();
   }, [subjectId]);
 
   return (
