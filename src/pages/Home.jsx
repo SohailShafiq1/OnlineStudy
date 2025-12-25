@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import HeroSection from '../components/HeroSection';
 import Card from '../components/Card';
+import { getClasses } from '../api';
 
 /**
  * Home Page - Main landing page
@@ -19,13 +20,19 @@ const Home = () => {
     { title: 'MCQs Bank', icon: '✍️', description: '5000+ practice questions', link: '/mcqs' },
   ];
 
-  // Classes Section
-  const classes = [
-    { title: '9th Class', icon: '🎒', link: '/classes/9th' },
-    { title: '10th Class', icon: '📚', link: '/classes/10th' },
-    { title: '11th Class', icon: '🎓', link: '/classes/11th' },
-    { title: '12th Class', icon: '👨‍🎓', link: '/classes/12th' },
-  ];
+  const [classes, setClasses] = useState([]);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const res = await getClasses();
+        setClasses(res.data || []);
+      } catch (e) {
+        console.error('Failed to load classes:', e);
+      }
+    };
+    fetchClasses();
+  }, []);
 
   return (
     <div>
@@ -67,12 +74,12 @@ const Home = () => {
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            {classes.map((cls, index) => (
+            {classes.map((cls) => (
               <Card
-                key={index}
-                title={cls.title}
-                icon={cls.icon}
-                link={cls.link}
+                key={cls._id}
+                title={cls.name}
+                icon={'🎒'}
+                link={`/classes/${cls._id}`}
                 bgColor="bg-gradient-to-br from-blue-50 to-indigo-100"
               />
             ))}

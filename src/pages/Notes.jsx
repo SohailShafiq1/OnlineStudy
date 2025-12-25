@@ -1,19 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../components/Card';
+import { getClasses, getEntranceExams } from '../api';
 
 /**
  * Notes Page - Main notes landing page
  * Shows cards for all classes and entrance exams
  */
 const Notes = () => {
-  const notesCategories = [
-    { title: '9th Class Notes', icon: '📘', description: 'All subjects complete notes', link: '/classes/9th' },
-    { title: '10th Class Notes', icon: '📗', description: 'Matric exam preparation', link: '/classes/10th' },
-    { title: '11th Class Notes', icon: '📙', description: 'FSc Part 1 all subjects', link: '/classes/11th' },
-    { title: '12th Class Notes', icon: '📕', description: 'FSc Part 2 complete notes', link: '/classes/12th' },
-    { title: 'MDCAT Notes', icon: '🎓', description: 'Medical entrance preparation', link: '/entrance-exams/mdcat' },
-    { title: 'NUMS Notes', icon: '⚕️', description: 'NUMS test preparation', link: '/entrance-exams/nums' },
-  ];
+  const [classes, setClasses] = useState([]);
+  const [exams, setExams] = useState([]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const c = await getClasses();
+        setClasses(c.data || []);
+      } catch (e) {
+        console.error('Failed to load classes:', e);
+      }
+      try {
+        const ex = await getEntranceExams();
+        setExams(ex.data || []);
+      } catch (e) {
+        console.error('Failed to load exams:', e);
+      }
+    };
+    fetch();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -31,14 +44,11 @@ const Notes = () => {
 
         {/* Notes Categories Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {notesCategories.map((category, index) => (
-            <Card
-              key={index}
-              title={category.title}
-              description={category.description}
-              icon={category.icon}
-              link={category.link}
-            />
+          {classes.map((cls) => (
+            <Card key={cls._id} title={`${cls.name} Notes`} description={`All subjects for ${cls.name}`} icon={'📘'} link={`/classes/${cls._id}`} />
+          ))}
+          {exams.map((ex) => (
+            <Card key={ex._id} title={`${ex.name} Notes`} description={`Entrance exam materials for ${ex.name}`} icon={'🎓'} link={`/entrance-exams?examId=${ex._id}`} />
           ))}
         </div>
 

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getClasses, getEntranceExams } from '../api';
 
 /**
  * Header Component - Sticky Navigation Bar
@@ -9,6 +10,26 @@ const Header = () => {
   const [isClassesOpen, setIsClassesOpen] = useState(false);
   const [isExamsOpen, setIsExamsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [classes, setClasses] = useState([]);
+  const [exams, setExams] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const cls = await getClasses();
+        setClasses(cls.data || []);
+      } catch (e) {
+        console.error('Failed to load classes for header:', e);
+      }
+      try {
+        const res = await getEntranceExams();
+        setExams(res.data || []);
+      } catch (e) {
+        console.error('Failed to load entrance exams for header:', e);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-md">
@@ -56,10 +77,13 @@ const Header = () => {
                   onMouseLeave={() => setIsClassesOpen(false)}
                   className="absolute top-full left-0 mt-2 w-40 bg-white shadow-lg rounded-lg py-2"
                 >
-                  <Link to="/classes/9th" className="block px-4 py-2 hover:bg-gray-100">9th Class</Link>
-                  <Link to="/classes/10th" className="block px-4 py-2 hover:bg-gray-100">10th Class</Link>
-                  <Link to="/classes/11th" className="block px-4 py-2 hover:bg-gray-100">11th Class</Link>
-                  <Link to="/classes/12th" className="block px-4 py-2 hover:bg-gray-100">12th Class</Link>
+                  {classes.length === 0 ? (
+                    <div className="px-4 py-2 text-sm text-gray-500">No classes</div>
+                  ) : (
+                    classes.map((c) => (
+                      <Link key={c._id} to={`/classes/${c._id}`} className="block px-4 py-2 hover:bg-gray-100">{c.name}</Link>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -87,13 +111,13 @@ const Header = () => {
                   onMouseLeave={() => setIsExamsOpen(false)}
                   className="absolute top-full left-0 mt-2 w-40 bg-white shadow-lg rounded-lg py-2"
                 >
-                  <Link to="/entrance-exams" className="block px-4 py-2 hover:bg-gray-100">All Exams</Link>
-                  <Link to="/entrance-exams/mdcat" className="block px-4 py-2 hover:bg-gray-100">MDCAT</Link>
-                  <Link to="/entrance-exams/nums" className="block px-4 py-2 hover:bg-gray-100">NUMS</Link>
-                  <Link to="/entrance-exams/nust" className="block px-4 py-2 hover:bg-gray-100">NUST</Link>
-                  <Link to="/entrance-exams/fmdc" className="block px-4 py-2 hover:bg-gray-100">FMDC</Link>
-                  <Link to="/entrance-exams/aku" className="block px-4 py-2 hover:bg-gray-100">AKU</Link>
-                  <Link to="/entrance-exams/amc" className="block px-4 py-2 hover:bg-gray-100">AMC</Link>
+                  {exams.length === 0 ? (
+                    <div className="px-4 py-2 text-sm text-gray-500">No exams</div>
+                  ) : (
+                    exams.map((e) => (
+                      <Link key={e._id} to={`/entrance-exams?examId=${e._id}`} className="block px-4 py-2 hover:bg-gray-100">{e.name}</Link>
+                    ))
+                  )}
                 </div>
               )}
             </div>

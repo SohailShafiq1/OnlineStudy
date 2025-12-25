@@ -1,23 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Card from '../components/Card';
+import { getNotes } from '../api';
 
 /**
  * Past Papers Page - Archive of past examination papers
  */
 const PastPapers = () => {
-  const paperCategories = [
-    { title: '9th Class Past Papers', icon: '📝', description: '2019-2024 solved papers', link: '/past-papers/9th' },
-    { title: '10th Class Past Papers', icon: '📝', description: 'Matric board papers', link: '/past-papers/10th' },
-    { title: '11th Class Past Papers', icon: '📝', description: 'FSc Part 1 papers', link: '/past-papers/11th' },
-    { title: '12th Class Past Papers', icon: '📝', description: 'FSc Part 2 papers', link: '/past-papers/12th' },
-    { title: 'MDCAT Past Papers', icon: '🎓', description: '5+ years MDCAT papers', link: '/past-papers/mdcat' },
-    { title: 'NUMS Past Papers', icon: '⚕️', description: 'NUMS test papers', link: '/past-papers/nums' },
-    { title: 'NUST Past Papers', icon: '🏛️', description: 'NUST NET papers', link: '/past-papers/nust' },
-    { title: 'AKU Past Papers', icon: '🏥', description: 'AKU entrance papers', link: '/past-papers/aku' },
-  ];
+  const [pastNotes, setPastNotes] = useState([]);
+  const [years] = useState(['2024', '2023', '2022', '2021', '2020', '2019']);
 
-  // Sample years for demonstration
-  const years = ['2024', '2023', '2022', '2021', '2020', '2019'];
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await getNotes();
+        const notes = res.data || [];
+        const past = notes.filter(n => {
+          const typeName = n.documentTypeId?.name || '';
+          return typeName.toLowerCase().includes('past') || (n.title || '').toLowerCase().includes('past');
+        });
+        setPastNotes(past);
+      } catch (e) {
+        console.error('Failed to load past papers from backend:', e);
+      }
+    };
+    fetch();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -35,15 +42,13 @@ const PastPapers = () => {
 
         {/* Papers Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {paperCategories.map((category, index) => (
-            <Card
-              key={index}
-              title={category.title}
-              description={category.description}
-              icon={category.icon}
-              link={category.link}
-            />
-          ))}
+          {pastNotes.length === 0 ? (
+            <div className="col-span-4 text-center text-gray-500">No past papers found</div>
+          ) : (
+            pastNotes.map(note => (
+              <Card key={note._id} title={note.title} description={note.chapterId?.name || ''} icon={'📝'} link={note.pdfUrl} />
+            ))
+          )}
         </div>
 
         {/* Sample Papers Section */}
