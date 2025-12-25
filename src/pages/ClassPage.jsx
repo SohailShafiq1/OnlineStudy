@@ -49,15 +49,18 @@ const ClassPage = () => {
 
         {/* Subjects Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
-          {subjects.map((subject) => (
-            <SubjectCard
-              key={subject.id}
-              subject={subject.name}
-              icon="📖"
-              link={`/classes/${classId}/${subject.id}`}
-              description="Study materials and notes"
-            />
-          ))}
+          {subjects.map((subject) => {
+            const sid = subject._id || subject.id;
+            return (
+              <SubjectCard
+                key={sid}
+                subject={subject.name}
+                icon="📖"
+                link={`/classes/${classId}/${sid}`}
+                description="Study materials and notes"
+              />
+            );
+          })}
         </div>
 
         {/* Quick Links Section */}

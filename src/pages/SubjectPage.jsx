@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getChapters, getNotes } from '../api';
 
+// Backend origin for serving uploaded files (remove trailing /api from API base)
+const BACKEND_API = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api';
+const BACKEND_ORIGIN = BACKEND_API.replace(/\/api$/i, '').replace(/\/$/, '');
+
 /**
  * SubjectPage Component - Shows chapters for a specific subject
  * Example: /classes/9th/biology
@@ -17,16 +21,18 @@ const SubjectPage = () => {
       try {
         // Fetch chapters
         const chaptersResponse = await getChapters();
-        const filteredChapters = chaptersResponse.data.filter(chapter =>
-          chapter.subjectId._id === subjectId || chapter.subjectId === subjectId
-        );
+        const filteredChapters = chaptersResponse.data.filter((chapter) => {
+          const sid = chapter.subjectId ? (chapter.subjectId._id || chapter.subjectId) : null;
+          return sid === subjectId;
+        });
         setChapters(filteredChapters);
 
         // Fetch notes
         const notesResponse = await getNotes();
-        const filteredNotes = notesResponse.data.filter(note =>
-          note.subjectId._id === subjectId || note.subjectId === subjectId
-        );
+        const filteredNotes = notesResponse.data.filter((note) => {
+          const nid = note.subjectId ? (note.subjectId._id || note.subjectId) : null;
+          return nid === subjectId;
+        });
         setNotes(filteredNotes);
 
         // Set subject name from the first note or chapter
@@ -71,32 +77,49 @@ const SubjectPage = () => {
             📑 Chapters
           </h2>
           <div className="space-y-4">
-            {chapters.map((chapter) => {
-              const chapterNotes = notes.filter(n => n.chapterId === chapter.id);
-              return (
-                <div
-                  key={chapter.id}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition border-l-4 border-primary"
-                >
+                {chapters.map((chapter) => {
+                  const chapterId = chapter._id || chapter.id;
+                  const chapterNotes = notes.filter((n) => {
+                    const nCid = n.chapterId ? (n.chapterId._id || n.chapterId) : null;
+                    return nCid === chapterId;
+                  });
+                  return (
+                    <div
+                      key={chapterId}
+                      className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition border-l-4 border-primary"
+                    >
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-gray-900 mb-2">
                       {chapter.name}
                     </h3>
                     {chapterNotes.length > 0 && (
                       <div className="mt-4 space-y-2">
-                        {chapterNotes.map((note) => (
-                          <div key={note.id} className="flex items-center justify-between bg-gray-50 p-3 rounded">
-                            <span className="font-medium">{note.title}</span>
-                            <a
-                              href={note.pdfUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition font-semibold text-sm"
-                            >
-                              View PDF
-                            </a>
-                          </div>
-                        ))}
+                        {chapterNotes.map((note) => {
+                          const noteId = note._id || note.id;
+                          const pdf = note.pdfUrl || note.path || note.fileUrl || null;
+                          return (
+                            <div key={noteId} className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                              <span className="font-medium">{note.title}</span>
+                                  {pdf ? (
+                                    (() => {
+                                      const resolved = pdf.startsWith('http') ? pdf : `${BACKEND_ORIGIN}${pdf}`;
+                                      return (
+                                        <a
+                                          href={resolved}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition font-semibold text-sm"
+                                        >
+                                          View PDF
+                                        </a>
+                                      );
+                                    })()
+                                  ) : (
+                                <span className="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm">No PDF</span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
