@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import HeroSection from '../components/HeroSection';
 import Card from '../components/Card';
-import { getClasses, getEntranceExams } from '../api';
+import { getClasses, getEntranceExams, getNotes } from '../api';
 
 /**
  * Home Page - Main landing page
@@ -10,6 +10,7 @@ import { getClasses, getEntranceExams } from '../api';
 const Home = () => {
   const [classes, setClasses] = useState([]);
   const [exams, setExams] = useState([]);
+  const [hasPastPapers, setHasPastPapers] = useState(false);
   const [popularSections, setPopularSections] = useState([]);
 
   useEffect(() => {
@@ -26,6 +27,17 @@ const Home = () => {
       } catch (e) {
         console.error('Failed to load exams:', e);
       }
+      try {
+        const notesRes = await getNotes();
+        const notes = notesRes.data || [];
+        const found = notes.some(n => {
+          const name = n.documentTypeId ? (n.documentTypeId.name || '') : '';
+          return name.toLowerCase().includes('past');
+        });
+        setHasPastPapers(Boolean(found));
+      } catch (e) {
+        console.error('Failed to load notes for past-papers check:', e);
+      }
     };
     fetch();
   }, []);
@@ -34,9 +46,11 @@ const Home = () => {
     const secs = [];
     classes.slice(0, 4).forEach(cls => secs.push({ title: `${cls.name} Notes`, icon: '📘', description: `Complete notes for ${cls.name}`, link: `/classes/${cls._id}` }));
     exams.slice(0, 2).forEach(ex => secs.push({ title: `${ex.name} Prep`, icon: '🎓', description: `Materials for ${ex.name}`, link: `/entrance-exams?examId=${ex._id}` }));
-    secs.push({ title: 'Past Papers', icon: '📄', description: 'Solved past papers', link: '/past-papers' });
+    if (hasPastPapers) {
+      secs.push({ title: 'Past Papers', icon: '📄', description: 'Solved past papers', link: '/past-papers' });
+    }
     setPopularSections(secs);
-  }, [classes, exams]);
+  }, [classes, exams, hasPastPapers]);
 
   
 

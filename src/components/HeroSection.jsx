@@ -1,20 +1,37 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Button from './Button';
+import { getClasses, getEntranceExams } from '../api';
 
 /**
  * HeroSection Component - Main banner section
  * Displays title, subtitle, and quick action buttons
  */
 const HeroSection = () => {
-  const quickLinks = [
+  const [quickLinks, setQuickLinks] = useState([
     { text: '9th Class', link: '/classes/9th' },
     { text: '10th Class', link: '/classes/10th' },
     { text: '1st Year', link: '/classes/11th' },
     { text: '2nd Year', link: '/classes/12th' },
-    { text: 'MDCAT', link: '/entrance-exams/mdcat' },
-    { text: 'NUMS', link: '/entrance-exams/nums' },
-  ];
+    { text: 'MDCAT', link: '/entrance-exams?examId=mdcat' },
+    { text: 'NUMS', link: '/entrance-exams?examId=nums' },
+  ]);
+
+  useEffect(() => {
+    const fetchQuickLinks = async () => {
+      try {
+        const [classesRes, examsRes] = await Promise.all([getClasses(), getEntranceExams()]);
+        const classes = (classesRes.data || []).slice(0, 4).map(c => ({ text: c.name, link: `/classes/${c._id}` }));
+        const exams = (examsRes.data || []).slice(0, 2).map(e => ({ text: e.name, link: `/entrance-exams?examId=${e._id}` }));
+        const merged = [...classes, ...exams];
+        if (merged.length) setQuickLinks(merged);
+      } catch (err) {
+        // keep defaults on error
+        console.error('Failed to fetch quick links:', err);
+      }
+    };
+    fetchQuickLinks();
+  }, []);
 
   return (
     <section className="bg-gradient-to-r from-blue-50 to-indigo-100 py-20">
