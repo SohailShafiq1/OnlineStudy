@@ -1,38 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import HeroSection from '../components/HeroSection';
 import Card from '../components/Card';
-import { getClasses } from '../api';
+import { getClasses, getEntranceExams } from '../api';
 
 /**
  * Home Page - Main landing page
  * Contains: Hero Section, Popular Study Sections, Classes Section
  */
 const Home = () => {
-  // Popular Study Sections Cards
-  const popularSections = [
-    { title: '9th Class Notes', icon: '📘', description: 'Complete notes for all subjects', link: '/classes/9th' },
-    { title: '10th Class Notes', icon: '📗', description: 'Matric board exam notes', link: '/classes/10th' },
-    { title: '11th Class Notes', icon: '📙', description: 'FSc Part 1 comprehensive notes', link: '/classes/11th' },
-    { title: '12th Class Notes', icon: '📕', description: 'FSc Part 2 complete material', link: '/classes/12th' },
-    { title: 'MDCAT Prep', icon: '🎓', description: 'Medical entrance test preparation', link: '/entrance-exams/mdcat' },
-    { title: 'NUMS Prep', icon: '⚕️', description: 'NUMS test complete guide', link: '/entrance-exams/nums' },
-    { title: 'Past Papers', icon: '📄', description: '5+ years solved papers', link: '/past-papers' },
-    { title: 'MCQs Bank', icon: '✍️', description: '5000+ practice questions', link: '/mcqs' },
-  ];
-
   const [classes, setClasses] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [popularSections, setPopularSections] = useState([]);
 
   useEffect(() => {
-    const fetchClasses = async () => {
+    const fetch = async () => {
       try {
-        const res = await getClasses();
-        setClasses(res.data || []);
+        const c = await getClasses();
+        setClasses(c.data || []);
       } catch (e) {
         console.error('Failed to load classes:', e);
       }
+      try {
+        const ex = await getEntranceExams();
+        setExams(ex.data || []);
+      } catch (e) {
+        console.error('Failed to load exams:', e);
+      }
     };
-    fetchClasses();
+    fetch();
   }, []);
+
+  useEffect(() => {
+    const secs = [];
+    classes.slice(0, 4).forEach(cls => secs.push({ title: `${cls.name} Notes`, icon: '📘', description: `Complete notes for ${cls.name}`, link: `/classes/${cls._id}` }));
+    exams.slice(0, 2).forEach(ex => secs.push({ title: `${ex.name} Prep`, icon: '🎓', description: `Materials for ${ex.name}`, link: `/entrance-exams?examId=${ex._id}` }));
+    secs.push({ title: 'Past Papers', icon: '📄', description: 'Solved past papers', link: '/past-papers' });
+    setPopularSections(secs);
+  }, [classes, exams]);
+
+  
 
   return (
     <div>

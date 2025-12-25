@@ -24,6 +24,13 @@ const noteSchema = new mongoose.Schema({
     ref: 'Subject',
     required: true
   },
+  documentTypeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DocumentType'
+  },
+  year: {
+    type: String
+  },
   path: {
     type: String,
     required: true

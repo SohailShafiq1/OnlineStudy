@@ -31,6 +31,7 @@ app.use('/api/subjects', require('./routes/subjects'));
 app.use('/api/chapters', require('./routes/chapters'));
 app.use('/api/notes', require('./routes/notes'));
 app.use('/api/entrance-exams', require('./routes/entranceExams'));
+app.use('/api/document-types', require('./routes/documentTypes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

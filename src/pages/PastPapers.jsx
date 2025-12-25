@@ -7,7 +7,7 @@ import { getNotes } from '../api';
  */
 const PastPapers = () => {
   const [pastNotes, setPastNotes] = useState([]);
-  const [years] = useState(['2024', '2023', '2022', '2021', '2020', '2019']);
+  const [years, setYears] = useState([]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -19,6 +19,8 @@ const PastPapers = () => {
           return typeName.toLowerCase().includes('past') || (n.title || '').toLowerCase().includes('past');
         });
         setPastNotes(past);
+        const yrs = Array.from(new Set(past.map(n => n.year).filter(Boolean))).sort((a,b)=>b-a);
+        setYears(yrs);
       } catch (e) {
         console.error('Failed to load past papers from backend:', e);
       }
@@ -57,15 +59,19 @@ const PastPapers = () => {
             Available Years
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-            {years.map((year) => (
-              <div
-                key={year}
-                className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 text-center border-2 border-blue-200 hover:border-primary transition cursor-pointer"
-              >
-                <div className="text-2xl font-bold text-primary">{year}</div>
-                <div className="text-xs text-gray-600 mt-1">Available</div>
-              </div>
-            ))}
+            {years.length === 0 ? (
+              <div className="col-span-6 text-center text-gray-500">No years available</div>
+            ) : (
+              years.map((year) => (
+                <div
+                  key={year}
+                  className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 text-center border-2 border-blue-200 hover:border-primary transition cursor-pointer"
+                >
+                  <div className="text-2xl font-bold text-primary">{year}</div>
+                  <div className="text-xs text-gray-600 mt-1">Available</div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

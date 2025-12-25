@@ -4,7 +4,8 @@ import {
   getSubjects, createSubject, deleteSubject,
   getChapters, createChapter, deleteChapter,
   getNotes, uploadNote, deleteNote,
-  getEntranceExams, uploadEntranceExam, deleteEntranceExam
+  getEntranceExams, uploadEntranceExam, deleteEntranceExam,
+  getDocumentTypes, createDocumentType
 } from '../api';
 
 const Admin = () => {
@@ -26,6 +27,11 @@ const Admin = () => {
   const [selectedChapter, setSelectedChapter] = useState('');
   const [noteTitle, setNoteTitle] = useState('');
   const [pdfFile, setPdfFile] = useState(null);
+  const [documentTypes, setDocumentTypes] = useState([]);
+  const [pastTitle, setPastTitle] = useState('');
+  const [pastPdfFile, setPastPdfFile] = useState(null);
+  const [pastYear, setPastYear] = useState('');
+  const pastFileInputRef = useRef(null);
   const [newExamName, setNewExamName] = useState('');
   const [examPdfFile, setExamPdfFile] = useState(null);
 
@@ -43,6 +49,7 @@ const Admin = () => {
     fetchChapters();
     fetchNotes();
     fetchEntranceExams();
+    fetchDocumentTypes();
   };
 
   const fetchClasses = async () => {
@@ -87,6 +94,15 @@ const Admin = () => {
       setEntranceExams(response.data || []);
     } catch (error) {
       console.error('Error fetching entrance exams:', error);
+    }
+  };
+
+  const fetchDocumentTypes = async () => {
+    try {
+      const res = await getDocumentTypes();
+      setDocumentTypes(res.data || []);
+    } catch (error) {
+      console.error('Error fetching document types:', error);
     }
   };
 
@@ -170,6 +186,53 @@ const Admin = () => {
       } catch (error) {
         console.error('Error uploading entrance exam:', error);
       }
+    }
+  };
+
+  const ensurePastDocType = async (chapterId) => {
+    // look for existing document type named 'Past Paper' for this chapter
+    try {
+      const existing = documentTypes.find(dt => dt.name.toLowerCase() === 'past paper' && ((dt.chapterId?._id || dt.chapterId) === chapterId));
+      if (existing) return existing._id;
+      const res = await createDocumentType({ name: 'Past Paper', chapterId });
+      // refresh document types
+      fetchDocumentTypes();
+      return res.data._id;
+    } catch (error) {
+      console.error('Error ensuring Past Paper document type:', error);
+      throw error;
+    }
+  };
+
+  const addPastPaper = async () => {
+    if (!selectedChapter || !pastPdfFile) {
+      alert('Select a chapter and choose a PDF for the past paper');
+      return;
+    }
+    try {
+      const chapter = chapters.find(c => c._id.toString() === selectedChapter.toString());
+      if (!chapter) return;
+      const subId = typeof chapter.subjectId === 'object' ? chapter.subjectId._id : chapter.subjectId;
+      const docTypeId = await ensurePastDocType(selectedChapter);
+
+      const formData = new FormData();
+      formData.append('pdf', pastPdfFile);
+      formData.append('title', pastTitle || pastPdfFile.name);
+      formData.append('chapterId', selectedChapter);
+      formData.append('subjectId', subId);
+      formData.append('documentTypeId', docTypeId);
+      if (pastYear) formData.append('year', pastYear);
+
+      await uploadNote(formData);
+      alert('Past paper uploaded successfully');
+      setPastTitle('');
+      setPastPdfFile(null);
+      setPastYear('');
+      if (pastFileInputRef.current) pastFileInputRef.current.value = '';
+      fetchNotes();
+    } catch (error) {
+      console.error('Error adding past paper:', error);
+      alert('Failed to upload past paper');
     }
   };
 
@@ -461,6 +524,57 @@ const Admin = () => {
                 />
                 <button onClick={addEntranceExam} className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">
                   Upload Entrance Exam
+                </button>
+              </div>
+            </div>
+
+            {/* Past Papers Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Past Paper</h2>
+              <div className="space-y-4">
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => { setSelectedSubject(e.target.value); setSelectedChapter(''); }}
+                  className="w-full px-4 py-2 border rounded-lg"
+                >
+                  <option value="">Select Subject</option>
+                  {subjects.map(sub => <option key={sub._id} value={sub._id}>{sub.name}</option>)}
+                </select>
+                <select
+                  value={selectedChapter}
+                  onChange={(e) => setSelectedChapter(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  disabled={!selectedSubject}
+                >
+                  <option value="">Select Chapter</option>
+                  {chapters.filter(ch => (ch.subjectId?._id || ch.subjectId) === selectedSubject).map(ch => (
+                    <option key={ch._id} value={ch._id}>{ch.name}</option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  value={pastTitle}
+                  onChange={(e) => setPastTitle(e.target.value)}
+                  placeholder="Past Paper Title (e.g. MDCAT 2023 - Biology)"
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+                <input
+                  type="text"
+                  value={pastYear}
+                  onChange={(e) => setPastYear(e.target.value)}
+                  placeholder="Year (e.g. 2023)"
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+                <input
+                  type="file"
+                  ref={pastFileInputRef}
+                  accept="application/pdf"
+                  onChange={(e) => setPastPdfFile(e.target.files[0])}
+                  className="w-full text-sm"
+                />
+                <button onClick={addPastPaper} className="w-full bg-yellow-600 text-white py-3 rounded-lg font-bold">
+                  Upload Past Paper
                 </button>
               </div>
             </div>

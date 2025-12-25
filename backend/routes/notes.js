@@ -36,7 +36,7 @@ const upload = multer({
 // Get all notes
 router.get('/', async (req, res) => {
   try {
-    const notes = await Note.find().populate('chapterId subjectId').sort({ createdAt: -1 });
+    const notes = await Note.find().populate('chapterId subjectId documentTypeId').sort({ createdAt: -1 });
     res.json(notes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -56,11 +56,13 @@ router.post('/', upload.single('pdf'), async (req, res) => {
       pdfUrl: `/uploads/${req.file.filename}`,
       chapterId: req.body.chapterId,
       subjectId: req.body.subjectId,
+      documentTypeId: req.body.documentTypeId || undefined,
+      year: req.body.year || undefined,
       path: req.file.path
     });
 
     const savedNote = await note.save();
-    await savedNote.populate('chapterId subjectId');
+    await savedNote.populate('chapterId subjectId documentTypeId');
     res.status(201).json(savedNote);
   } catch (error) {
     res.status(400).json({ message: error.message });

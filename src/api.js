@@ -46,4 +46,9 @@ export const uploadEntranceExam = (formData) => {
 };
 export const deleteEntranceExam = (id) => api.delete(`/entrance-exams/${id}`);
 
+// Document Types
+export const getDocumentTypes = () => api.get('/document-types');
+export const createDocumentType = (data) => api.post('/document-types', data);
+export const deleteDocumentType = (id) => api.delete(`/document-types/${id}`);
+
 export default api;
